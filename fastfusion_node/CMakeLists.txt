@@ -54,10 +54,10 @@ add_executable(fastfusion_node
 if(APPLE OR WIN32)
 target_link_libraries(fastfusion_node
 										${catkin_LIBRARIES}
-										${CATKIN_DEVEL_PREFIX}/lib/libgeometryfusion_mipmap_cpu.a
-										${CATKIN_DEVEL_PREFIX}/lib/libgeometryfusion_aos.a
-										${CATKIN_DEVEL_PREFIX}/lib/libcamerautils.a
-										${CATKIN_DEVEL_PREFIX}/lib/libauxiliary.a
+										${CATKIN_DEVEL_PREFIX}/../fusion/lib/libgeometryfusion_mipmap_cpu.a
+										${CATKIN_DEVEL_PREFIX}/../fusion/lib/libgeometryfusion_aos.a
+										${CATKIN_DEVEL_PREFIX}/../camerautils/lib/libcamerautils.a
+										${CATKIN_DEVEL_PREFIX}/../auxiliary/lib/libauxiliary.a
 										${OpenCV_LIBS}
 										boost_thread-mt
 										boost_system-mt
@@ -71,10 +71,10 @@ target_link_libraries(fastfusion_node
 else()
 target_link_libraries(fastfusion_node
 										${catkin_LIBRARIES}
-										${CATKIN_DEVEL_PREFIX}/lib/libgeometryfusion_mipmap_cpu.a
-										${CATKIN_DEVEL_PREFIX}/lib/libgeometryfusion_aos.a
-										${CATKIN_DEVEL_PREFIX}/lib/libcamerautils.a
-										${CATKIN_DEVEL_PREFIX}/lib/libauxiliary.a
+										${CATKIN_DEVEL_PREFIX}/../fusion/lib/libgeometryfusion_mipmap_cpu.a
+										${CATKIN_DEVEL_PREFIX}/../fusion/lib/libgeometryfusion_aos.a
+										${CATKIN_DEVEL_PREFIX}/../camerautils/lib/libcamerautils.a
+										${CATKIN_DEVEL_PREFIX}/../auxiliary/lib/libauxiliary.a
 										${OpenCV_LIBS}
 										boost_thread
 										boost_system
