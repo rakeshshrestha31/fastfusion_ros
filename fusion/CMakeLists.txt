@@ -9,7 +9,7 @@ catkin_simple(ALL_DEPS_REQUIRED)
 find_package(cmake_modules REQUIRED)
 
 find_package(Eigen REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories("/usr/include/eigen3")
