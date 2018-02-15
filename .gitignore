@@ -2,4 +2,6 @@
 .cproject
 .project
 .settings
+.idea*
+cmake-build*
 *~
