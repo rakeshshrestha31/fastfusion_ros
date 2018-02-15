@@ -5,8 +5,11 @@
     <arg name="camera_name" value="/camera"/>
     
     <!-- Run Bagfile -->
-    <node pkg="rosbag" type="play" name="player" args="-r 1.0 $(arg bag_file) --clock"/>
+    <node pkg="rosbag" type="play" name="player" args="-r 1 $(arg bag_file) --clock"/>
     <!--/home/karrer/FinalDataSet/2016_Feb_11/Picoflexx/Boiler/boiler_mode1_oneside2.bag" -->
+
+    <!--RGB-D to PCL-->
+    <include file="$(find fastfusion_node)/launch/include/rgbd_to_pcl_tum.launch" />
 
     <!-- Run ORB-SLAM (RGBD) -->
     <!-- <node name="orbrgbd_node" pkg="ORB_SLAM2" type="RGBD" output="screen"
@@ -16,12 +19,12 @@
     </node> -->
 
     <!-- Run fastfusion_node-->
-    <node  name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen" >
-        <remap from="point_cloud"       to="$(arg camera_name)/rgb/points" />
+    <!--<node  name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen" >-->
+        <!--<remap from="point_cloud"       to="$(arg camera_name)/rgb/points" />-->
 
         <!-- Load parameters -->
-        <rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/> 
-        <rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>
-    </node>
+        <!--<rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/> -->
+        <!--<rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>-->
+    <!--</node>-->
     
 </launch>
