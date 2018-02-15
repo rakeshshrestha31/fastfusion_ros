@@ -102,135 +102,141 @@ if __name__ == '__main__':
     bridge = CvBridge()
     frame = 0 
     transforms = dict()
-    
-    time_start = None
-    for topic, msg, t in inbag.read_messages():
-        if time_start==None:
-            time_start=t
-        if t - time_start < rospy.Duration.from_sec(float(args.start)):
-            continue
-        if args.duration and (t - time_start > rospy.Duration.from_sec(float(args.start) + float(args.duration))):
-            break
-        print "t=%f\r"%(t-time_start).to_sec(),
-        if topic == "/tf":
-            for transform in msg.transforms:
-                transforms[ (transform.header.frame_id,transform.child_frame_id) ] = transform
-            continue
-        if topic == "/imu":
-            imu = msg
-            continue
-        if topic == "/camera/depth/camera_info":
-            depth_camera_info = msg
-            continue
-        if topic == "/camera/rgb/camera_info":
-            rgb_camera_info = msg
-            continue
-        if topic == "/camera/rgb/image_color" and rgb_camera_info:
-            rgb_image_color = msg
-            continue
-        if topic == "/camera/depth/image" and depth_camera_info and rgb_image_color and rgb_camera_info:# and imu:
-            depth_image = msg
-            # now process frame
-            
-            if depth_image.header.stamp - rgb_image_color.header.stamp > rospy.Duration.from_sec(1/30.0):
-                continue
-            
-            frame += 1
-            if frame % float(args.nth) ==0:
-                if args.skip > 0:
-                    args.skip -= 1
-                else:
-                    # store messages
-                    msg = tf.msg.tfMessage()
-                    msg.transforms = list( transforms.itervalues() ) 
-                    outbag.write("/tf",msg,t)
-                    transforms = dict()
-#                    outbag.write("/imu",imu,t)
-                    outbag.write("/camera/depth/camera_info",depth_camera_info,t)
-                    outbag.write("/camera/depth/image",depth_image,t)
-                    outbag.write("/camera/rgb/camera_info",rgb_camera_info,t)
-                    outbag.write("/camera/rgb/image_color",rgb_image_color,t)
 
-                    # generate monochrome image from color image
-                    cv_rgb_image_mono = bridge.imgmsg_to_cv2(rgb_image_color, "mono8")
-                    rgb_image_mono = bridge.cv2_to_imgmsg(cv_rgb_image_mono)
-                    rgb_image_mono.header = rgb_image_color.header
-                    outbag.write("/camera/rgb/image_mono",rgb_image_mono,t)
-    
-                    # generate depth and colored point cloud
-                    cv_depth_image = bridge.imgmsg_to_cv2(depth_image, "passthrough")
-                    cv_rgb_image_color = bridge.imgmsg_to_cv2(rgb_image_color, "bgr8")
-    #                
-                    centerX = depth_camera_info.K[2]
-                    centerY = depth_camera_info.K[5]
-                    depthFocalLength = depth_camera_info.K[0]
-                    depth_points = sensor_msgs.msg.PointCloud2()
-                    depth_points.header = depth_image.header
-                    depth_points.width = depth_image.width
-                    depth_points.height  = depth_image.height
-                    depth_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "x",offset = 0,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    depth_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "y",offset = 4,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    depth_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "z",offset = 8,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    depth_points.point_step = 16 
-                    depth_points.row_step = depth_points.point_step * depth_points.width
-                    buffer = []
-                    buffer_rgb = []
-                    for v in range(depth_image.height):
-                        for u in range(depth_image.width):
-                            d = cv_depth_image[v,u]
-                            ptx = (u - centerX) * d / depthFocalLength;
-                            pty = (v - centerY) * d / depthFocalLength;
-                            ptz = d;
-                            buffer.append(struct.pack('ffff',ptx,pty,ptz,1.0))
-                    depth_points.data = "".join(buffer)
-                    outbag.write("/camera/depth/points", depth_points, t)
-                    
-                    centerX = depth_camera_info.K[2]
-                    centerY = depth_camera_info.K[5]
-                    depthFocalLength = depth_camera_info.K[0]
-                    rgb_points = sensor_msgs.msg.PointCloud2()
-                    rgb_points.header = rgb_image_color.header
-                    # remove trailing "/" from frame_id
-                    rgb_points.header.frame_id = rgb_image_color.header.frame_id[1:]
-                    rgb_points.width = depth_image.width
-                    rgb_points.height  = depth_image.height
-                    rgb_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "x",offset = 0,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    rgb_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "y",offset = 4,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    rgb_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "z",offset = 8,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    rgb_points.fields.append(sensor_msgs.msg.PointField(
-                        name = "rgb",offset = 16,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
-                    rgb_points.point_step = 32 
-                    rgb_points.row_step = rgb_points.point_step * rgb_points.width
-                    buffer = []
-                    for v in range(depth_image.height):
-                        for u in range(depth_image.width):
-                            d = cv_depth_image[v,u]
-                            rgb = cv_rgb_image_color[v,u]
-                            ptx = (u - centerX) * d / depthFocalLength;
-                            pty = (v - centerY) * d / depthFocalLength;
-                            ptz = d;
-                            buffer.append(struct.pack('ffffBBBBIII',
-                                ptx,pty,ptz,1.0,
-                                rgb[0],rgb[1],rgb[2],0,
-                                0,0,0))
-                    rgb_points.data = "".join(buffer)
-                    outbag.write("/camera/rgb/points", rgb_points, t)                
-            # consume the images
-#            imu = None
-            depth_image = None
-            rgb_image_color = None
-            continue
-        if topic not in ["/tf","/imu",
-                         "/camera/depth/camera_info","/camera/rgb/camera_info",
-                         "/camera/rgb/image_color","/camera/depth/image"]:
-            # anything else: pass thru
-            outbag.write(topic,msg,t)
-                
+    try:
+        time_start = None
+        for topic, msg, t in inbag.read_messages():
+            if time_start==None:
+                time_start=t
+            if t - time_start < rospy.Duration.from_sec(float(args.start)):
+                continue
+            if args.duration and (t - time_start > rospy.Duration.from_sec(float(args.start) + float(args.duration))):
+                break
+            print "t=%f\r"%(t-time_start).to_sec(),
+            if topic == "/tf":
+                for transform in msg.transforms:
+                    transforms[ (transform.header.frame_id,transform.child_frame_id) ] = transform
+                continue
+            if topic == "/imu":
+                imu = msg
+                continue
+            if topic == "/camera/depth/camera_info":
+                depth_camera_info = msg
+                continue
+            if topic == "/camera/rgb/camera_info":
+                rgb_camera_info = msg
+                continue
+            if topic == "/camera/rgb/image_color" and rgb_camera_info:
+                rgb_image_color = msg
+                continue
+            if topic == "/camera/depth/image" and depth_camera_info and rgb_image_color and rgb_camera_info:# and imu:
+                depth_image = msg
+                # now process frame
+
+                if depth_image.header.stamp - rgb_image_color.header.stamp > rospy.Duration.from_sec(1/30.0):
+                    continue
+
+                frame += 1
+                if frame % float(args.nth) ==0:
+                    if args.skip > 0:
+                        args.skip -= 1
+                    else:
+                        # store messages
+                        msg = tf.msg.tfMessage()
+                        msg.transforms = list( transforms.itervalues() )
+                        outbag.write("/tf",msg,t)
+                        transforms = dict()
+    #                    outbag.write("/imu",imu,t)
+                        outbag.write("/camera/depth/camera_info",depth_camera_info,t)
+                        outbag.write("/camera/depth/image",depth_image,t)
+                        outbag.write("/camera/rgb/camera_info",rgb_camera_info,t)
+                        outbag.write("/camera/rgb/image_color",rgb_image_color,t)
+
+                        # generate monochrome image from color image
+                        cv_rgb_image_mono = bridge.imgmsg_to_cv2(rgb_image_color, "mono8")
+                        rgb_image_mono = bridge.cv2_to_imgmsg(cv_rgb_image_mono)
+                        rgb_image_mono.header = rgb_image_color.header
+                        outbag.write("/camera/rgb/image_mono",rgb_image_mono,t)
+
+                        # generate depth and colored point cloud
+                        cv_depth_image = bridge.imgmsg_to_cv2(depth_image, "passthrough")
+                        cv_rgb_image_color = bridge.imgmsg_to_cv2(rgb_image_color, "bgr8")
+        #
+                        centerX = depth_camera_info.K[2]
+                        centerY = depth_camera_info.K[5]
+                        depthFocalLength = depth_camera_info.K[0]
+                        depth_points = sensor_msgs.msg.PointCloud2()
+                        depth_points.header = depth_image.header
+                        depth_points.width = depth_image.width
+                        depth_points.height  = depth_image.height
+                        depth_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "x",offset = 0,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        depth_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "y",offset = 4,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        depth_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "z",offset = 8,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        depth_points.point_step = 16
+                        depth_points.row_step = depth_points.point_step * depth_points.width
+                        buffer = []
+                        buffer_rgb = []
+                        for v in range(depth_image.height):
+                            for u in range(depth_image.width):
+                                d = cv_depth_image[v,u]
+                                ptx = (u - centerX) * d / depthFocalLength;
+                                pty = (v - centerY) * d / depthFocalLength;
+                                ptz = d;
+                                buffer.append(struct.pack('ffff',ptx,pty,ptz,1.0))
+                        depth_points.data = "".join(buffer)
+                        outbag.write("/camera/depth/points", depth_points, t)
+
+                        centerX = depth_camera_info.K[2]
+                        centerY = depth_camera_info.K[5]
+                        depthFocalLength = depth_camera_info.K[0]
+                        rgb_points = sensor_msgs.msg.PointCloud2()
+                        rgb_points.header = rgb_image_color.header
+                        # remove trailing "/" from frame_id
+                        rgb_points.header.frame_id = rgb_image_color.header.frame_id
+                        if len(rgb_points.header.frame_id) and rgb_points.header.frame_id[0] == '/':
+                            rgb_points.header.frame_id = rgb_points.header.frame_id[1:]
+
+                        rgb_points.width = depth_image.width
+                        rgb_points.height  = depth_image.height
+                        rgb_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "x",offset = 0,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        rgb_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "y",offset = 4,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        rgb_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "z",offset = 8,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        rgb_points.fields.append(sensor_msgs.msg.PointField(
+                            name = "rgb",offset = 16,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+                        rgb_points.point_step = 32
+                        rgb_points.row_step = rgb_points.point_step * rgb_points.width
+                        buffer = []
+                        for v in range(depth_image.height):
+                            for u in range(depth_image.width):
+                                d = cv_depth_image[v,u]
+                                rgb = cv_rgb_image_color[v,u]
+                                ptx = (u - centerX) * d / depthFocalLength;
+                                pty = (v - centerY) * d / depthFocalLength;
+                                ptz = d;
+                                buffer.append(struct.pack('ffffBBBBIII',
+                                    ptx,pty,ptz,1.0,
+                                    rgb[0],rgb[1],rgb[2],0,
+                                    0,0,0))
+                        rgb_points.data = "".join(buffer)
+                        outbag.write("/camera/rgb/points", rgb_points, t)
+                # consume the images
+    #            imu = None
+                depth_image = None
+                rgb_image_color = None
+                continue
+            if topic not in ["/tf","/imu",
+                             "/camera/depth/camera_info","/camera/rgb/camera_info",
+                             "/camera/rgb/image_color","/camera/depth/image"]:
+                # anything else: pass thru
+                outbag.write(topic,msg,t)
+    except:
+        print('Something bad happened, bag not saved in full')
+
     outbag.close()
     print
