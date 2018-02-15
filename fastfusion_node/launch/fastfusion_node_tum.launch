@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-15"?>
 <launch>
-
+    <arg name="bag_file" default="/home/rakesh/SLAM/datasets/TUM/rgbd_dataset_freiburg2_pioneer_slam2-with-pcl.bag" />
     <!-- Use the algorithm together with a Bagfile, compute poses using OKVIS -->
     <arg name="camera_name" value="/camera"/>
     
     <!-- Run Bagfile -->
-    <node pkg="rosbag" type="play" name="player" args="-r 1.0 /home/rakesh/SLAM/datasets/TUM/rgbd_dataset_freiburg2_pioneer_slam2-with-pcl.bag --clock"/> 
+    <node pkg="rosbag" type="play" name="player" args="-r 1.0 $(arg bag_file) --clock"/>
     <!--/home/karrer/FinalDataSet/2016_Feb_11/Picoflexx/Boiler/boiler_mode1_oneside2.bag" -->
 
     <!-- Run ORB-SLAM (RGBD) -->
@@ -17,7 +17,7 @@
 
     <!-- Run fastfusion_node-->
     <node  name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen" >
-        <remap from="point_cloud"       to="$(arg camera_name)/depth/points" />
+        <remap from="point_cloud"       to="$(arg camera_name)/rgb/points" />
 
         <!-- Load parameters -->
         <rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/> 
