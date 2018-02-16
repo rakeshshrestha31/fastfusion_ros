@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(fusion)
-set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Release)
 find_package(catkin REQUIRED)
 
 find_package(catkin_simple REQUIRED)
@@ -15,9 +15,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories("/usr/include/eigen3")
 include_directories(${PCL_INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -mavx2 -funroll-loops -DOWNAVX")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -mavx2 -funroll-loops -DOWNAVX")
+add_definitions("-DENABLE_SSE")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${SSE_FLAGS} -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++11 ${SSE_FLAGS} -march=native")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall") # -mavx2 -funroll-loops -DOWNAVX")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall") # -mavx2 -funroll-loops -DOWNAVX")
 if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
