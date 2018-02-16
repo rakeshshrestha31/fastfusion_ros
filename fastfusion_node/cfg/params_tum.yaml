@@ -22,7 +22,7 @@ fileLocation : /home/rakesh/tum
 use_vicon_pose : false
 world_id : world
 tracker_id : random # kinect
-cam_id : openni_rgb_optical_frame
+cam_id : fake_camera # openni_rgb_optical_frame
 
 # Use time-window based reconstruction
 # Set decay_time to value <= 0.0 to achieve full reconstruction,

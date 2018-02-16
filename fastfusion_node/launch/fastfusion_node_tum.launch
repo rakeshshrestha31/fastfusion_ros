@@ -4,12 +4,12 @@
     <!-- Use the algorithm together with a Bagfile, compute poses using OKVIS -->
     <arg name="camera_name" value="/camera"/>
 
-    <param name="use_sim_time" value="false" />
-    <!-- Run Bagfile -->
-    <node pkg="rosbag" type="play" name="player" args="-r 0.5 $(arg bag_file)" output="screen">
+    <param name="use_sim_time" value="true" />
+
+    <!-- Run Bagfile, a fork of the original rosbag package from https://github.com/jennan/ros_comm -->
+    <node pkg="rosbag_sim" type="play" name="player" args="-r 0.5 --clock $(arg bag_file)" output="screen">
         <!--<remap from="tf" to="tf_old" />-->
     </node>
-    <!--<node pkg="fastfusion_node" type="time_jumper.py" name="time_jumper" output="screen" />-->
     <!--/home/karrer/FinalDataSet/2016_Feb_11/Picoflexx/Boiler/boiler_mode1_oneside2.bag" -->
 
     <!--RGB-D to PCL-->
@@ -22,11 +22,14 @@
         <remap from="/camera/depth_registered/image_raw" to="/camera/depth/image" />
     </node> -->
 
+    <!-- The transform between kinect and openni_rgb_optical_frame is shakey in the bagfile, broadcast fake camera frame yourself -->
+    <node pkg="tf" type="static_transform_publisher" name="camera_localizer"
+          args="-0.000, 0.012, -0.094 0.050, 0.868, -0.494, -0.029 kinect fake_camera 10" />
+
     <!-- Run fastfusion_node-->
     <node  name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen" >
         <remap from="point_cloud"       to="$(arg camera_name)/depth/points" />
 
-        <!-- Load parameters -->
         <rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/>
         <rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>
     </node>
