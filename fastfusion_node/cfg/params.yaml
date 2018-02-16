@@ -10,7 +10,7 @@ threadFusion : true
 threadMeshing : true
 
 # Scales
-imageScale : 1.031
+imageScale : 5000.0
 scale : 0.009
 distanceThreshold : 0.03
 

@@ -10,9 +10,9 @@ threadFusion : true
 threadMeshing : true
 
 # Scales
-imageScale : 5000.0
+imageScale : 1000.0
 scale : 0.009
-distanceThreshold : 0.03
+distanceThreshold : 0.05
 
 # Mesh Saving (location + desired Name without ending)
 saveMesh : true
