@@ -2,31 +2,17 @@
 	<!-- Disable bond topics by default -->
 	<arg name="bond"                            default="true" />
 	<arg name="respawn"                         default="$(arg bond)" />
-	<arg name="manager"							default="rgbd_nodelet_manager"/>
 	<arg name="namespace"						default="tum_rgbd" />
+
 	<!-- RGB-D to pointcloud -->
-	<node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
-	
 	<group ns="$(arg namespace)">
-		<node pkg="nodelet" type="nodelet" name="depth_registration"
-	        args="load depth_image_proc/register $(arg manager) $(arg bond)" respawn="$(arg respawn)" output="screen">
-			
-			<remap from="depth/image_rect"					to="/camera/depth/image" />
-			<remap from="rgb/camera_info"					to="/camera/rgb/camera_info" />
-			<remap from="depth/camera_info"					to="/camera/depth/camera_info" />
-
-			<remap from="depth_registered/camera_info"		to="/camera/depth_registered/camera_info" />
-			<remap from="depth_registered/image_rect"		to="/camera/depth_registered/image_rect" />
-			
-		</node>
-
 		<node pkg="nodelet" type="nodelet" name="points_xyzrgb_sw_registered"
-	        args="load depth_image_proc/point_cloud_xyzrgb $(arg manager) $(arg bond)" respawn="$(arg respawn)" output="screen">
+	        args="standalone depth_image_proc/point_cloud_xyzrgb" respawn="$(arg respawn)" output="screen">
 			
 			<remap from="rgb/image_rect_color"        to="/camera/rgb/image_color" />
 			<remap from="rgb/camera_info"             to="/camera/rgb/camera_info" />
-			<remap from="depth_registered/image_rect" to="/camera/depth_registered/image_rect" />
-			<remap from="depth_registered/points"     to="/camera/depth_registered/points" />
+			<remap from="depth_registered/image_rect" to="/camera/depth/image" />
+			<remap from="depth_registered/points"     to="/camera/depth/points" />
 		</node>
 	</group>
 
