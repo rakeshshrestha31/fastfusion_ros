@@ -49,8 +49,7 @@ FastFusionWrapper::FastFusionWrapper():  nodeLocal_("~") {
 	R_cam0_imu(1, 0) = (double) T_cam0_imu[1][0];
 	R_cam0_imu(1, 1) = (double) T_cam0_imu[1][1];
 	R_cam0_imu(1, 2) = (double) T_cam0_imu[1][2];
-	R_cam0_imu(2, 0) = (double) T_cam0_imu[2][0];
-	R_cam0_imu(2, 1) = (double) T_cam0_imu[2][1];
+git status	R_cam0_imu(2, 1) = (double) T_cam0_imu[2][1];
 	R_cam0_imu(2, 2) = (double) T_cam0_imu[2][2];
 	t_cam0_imu(0) = (double) T_cam0_imu[0][3];
 	t_cam0_imu(1) = (double) T_cam0_imu[1][3];
