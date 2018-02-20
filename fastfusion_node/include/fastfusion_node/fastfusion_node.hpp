@@ -50,7 +50,8 @@ protected:
 	void registerPointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr & pcl_msg);
 
 	//-- Extract OpenCV mat from ROS messages
-	void getRGBImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgRGB, cv::Mat *rgbImg);
+	void getRGBImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgRGB, cv::Mat *rgbImg,
+							   cv::Size size = cv::Size(480, 640));
 	void getConfImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgConf, cv::Mat *confImg);
 	void getDepthImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgDepth, cv::Mat *dephtImg);
 	void getNoiseImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgNoise, cv::Mat *noiseImg);
@@ -106,6 +107,7 @@ protected:
 	//-- Parameters for configuration
 	int frameCounter_;
 	bool use_pmd_, depth_noise_;
+    bool use_pointcloud_input_;
 	bool testing_point_cloud_;
 	bool use_vicon_pose_;
 	pcl::PointCloud<pcl::PointXYZRGB> pointCloudFrame_;

@@ -35,6 +35,7 @@ FastFusionWrapper::FastFusionWrapper():  nodeLocal_("~") {
 	loadSuccess &= nodeLocal_.getParam("cam_id",cam_id_);						// Frame id of depth camera
 	loadSuccess &= nodeLocal_.getParam("tracker_id",tracker_id_);				// Frame id of the pose measurement
 	loadSuccess &= nodeLocal_.getParam("use_pmd",use_pmd_);						// Use ToF of RGBD
+	loadSuccess &= nodeLocal_.getParam("use_pointcloud_input", use_pointcloud_input_);
 	loadSuccess &= nodeLocal_.getParam("depth_noise",depth_noise_);				// Depth noise data is available
 	loadSuccess &= nodeLocal_.getParam("use_pcl_visualizer", use_pcl_visualizer_);// Use the pcl visualizer to show point cloud
 	loadSuccess &= nodeLocal_.getParam("use_vicon_pose", use_vicon_pose_);		// Use ground truth poses from vicon
@@ -195,8 +196,9 @@ void FastFusionWrapper::run() {
 		subscriberDepth_ = new message_filters::Subscriber<sensor_msgs::Image>;
 		subscriberConfidence_ = new message_filters::Subscriber<sensor_msgs::Image>;
 		subscriberNoise_ = new message_filters::Subscriber<sensor_msgs::Image>;
-		subscriberDepth_->subscribe(node_,node_.resolveName("image_depth"),15);
-		subscriberConfidence_->subscribe(node_,node_.resolveName("image_conf"),15);
+		subscriberDepth_->subscribe(node_,node_.resolveName("image_depth"),1);
+		subscriberConfidence_->subscribe(node_,node_.resolveName("image_conf"),1);
+
 
 		if (depth_noise_) {
 			//-- Use depth noise data
@@ -213,11 +215,23 @@ void FastFusionWrapper::run() {
 			sync_->registerCallback(boost::bind(&FastFusionWrapper::imageCallbackPico, this,  _1,  _2));
 		}
 	} else {
-		//-- Use RealSense data for the reconstruction
-		//-- Synchronize the image messages received from Realsense Sensor
-		subscriberPointCloud_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>;
-		subscriberPointCloud_->subscribe(node_, node_.resolveName("point_cloud"),15);
-		subscriberPointCloud_->registerCallback(&FastFusionWrapper::registerPointCloudCallback,this);
+		if (use_pointcloud_input_) {
+			//-- Use RealSense data for the reconstruction
+			//-- Synchronize the image messages received from Realsense Sensor
+			subscriberPointCloud_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>;
+			subscriberPointCloud_->subscribe(node_, node_.resolveName("point_cloud"), 15);
+			subscriberPointCloud_->registerCallback(&FastFusionWrapper::registerPointCloudCallback, this);
+		} else {
+			subscriberRGB_ = new message_filters::Subscriber<sensor_msgs::Image>;
+			subscriberDepth_ = new message_filters::Subscriber<sensor_msgs::Image>;
+
+			subscriberRGB_->subscribe(node_, node_.resolveName("image_color"),  1);
+			subscriberDepth_->subscribe(node_, node_.resolveName("image_depth"), 1);
+			sync_ = new message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> >
+				(message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image>(15),
+				 *subscriberRGB_,*subscriberDepth_);
+			sync_->registerCallback(boost::bind(&FastFusionWrapper::imageCallback, this,  _1,  _2));
+		}
 	}
 	//-- Point Cloud publisher (only used for time window based reconstruction
 	ros::Publisher output_pub_ = node_.advertise<pcl::PointCloud<pcl::PointXYZRGB> > ("fastfusion/pointCloud", 100);
@@ -311,6 +325,10 @@ void FastFusionWrapper::imageCallbackPico(const sensor_msgs::ImageConstPtr& msgD
 	getConfImageFromRosMsg(msgConf, &imgConfDist);
 	getNoiseImageFromRosMsg(msgNoise, &imgNoiseDist);
 
+    if (imgDepthDist.empty() || imgConfDist.empty() || imgNoiseDist.empty()) {
+        return;
+    }
+
 	//-- Undistort the depth image
 	cv::undistort(imgDepthDist, imgDepth, intrinsic_, distCoeff_);
 	cv::undistort(imgConfDist, imgConf, intrinsic_, distCoeff_);
@@ -379,6 +397,10 @@ void FastFusionWrapper::imageCallbackPico(const sensor_msgs::ImageConstPtr& msgD
 	//-- Convert the incomming messages
 	getDepthImageFromRosMsg(msgDepth, &imgDepthDist);
 	getConfImageFromRosMsg(msgConf, &imgConfDist);
+
+    if (imgDepthDist.empty() || imgConfDist.empty()) {
+        return;
+    }
 
 	//-- Undistort the depth image
 	cv::undistort(imgDepthDist, imgDepth, intrinsic_, distCoeff_);
@@ -521,7 +543,7 @@ void FastFusionWrapper::registerPointCloudCallback(const sensor_msgs::PointCloud
 }
 
 
-void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB, 
+void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB,
 										const sensor_msgs::ImageConstPtr& msgDepth) {
 //-- Callback function to receive depth image with corresponding RGB frame as ROS-Messages
 //-- Convert the messages to cv::Mat and wait for tf-transform corresponding to the frames
@@ -533,8 +555,12 @@ void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB,
 	cv::Mat imgRGB, imgDepth;
 	ros::Time timeMeas;
 	//-- Convert the incomming messagesb
-	getRGBImageFromRosMsg(msgRGB, &imgRGB);
 	getDepthImageFromRosMsg(msgDepth, &imgDepth);
+    getRGBImageFromRosMsg(msgRGB, &imgRGB, imgDepth.size());
+
+    if (imgDepth.empty() || imgRGB.empty()) {
+        return;
+    }
 
 	//-- Get time stamp of the incoming images
 	ros::Time timestamp = msgRGB->header.stamp;
@@ -565,11 +591,11 @@ void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB,
 	}
 }
 
-void FastFusionWrapper::getRGBImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgRGB, cv::Mat *rgbImg) {
+void FastFusionWrapper::getRGBImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgRGB, cv::Mat *rgbImg, cv::Size size) {
 //-- Function to convert ROS-image (RGB) message to OpenCV-Mat (function is not used anymore).
 	cv::Mat rgbImg2 = cv_bridge::toCvCopy(msgRGB, sensor_msgs::image_encodings::BGR8)->image;
 	//-- Resize to the size of the depth image.
-	cv::resize(rgbImg2,*rgbImg,cv::Size(480,360),cv::INTER_LINEAR);
+	cv::resize(rgbImg2,*rgbImg, size ,cv::INTER_LINEAR);
 }
 
 
@@ -581,7 +607,15 @@ void FastFusionWrapper::getConfImageFromRosMsg(const sensor_msgs::ImageConstPtr&
 
 void FastFusionWrapper::getDepthImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgDepth, cv::Mat *depthImg) {
 //-- Function to convert ROS-image(depth) message to OpenCV-Mat.
-	*depthImg = cv_bridge::toCvCopy(msgDepth, sensor_msgs::image_encodings::TYPE_16UC1)->image;
+	*depthImg = cv_bridge::toCvCopy(msgDepth)->image;
+    if (depthImg->type() != CV_16UC1) {
+        if (depthImg->type() == CV_32FC1) {
+            depthImg->convertTo(*depthImg, CV_16UC1, imageScale_);
+        } else {
+            ROS_ERROR("Depth image is neither 32F or 16U type");
+            *depthImg = cv::Mat();
+        }
+    }
 }
 
 void FastFusionWrapper::getNoiseImageFromRosMsg(const sensor_msgs::ImageConstPtr& msgNoise, cv::Mat *noiseImg) {
