@@ -174,6 +174,7 @@ protected :
 	//-- Meshing Members
 	std::vector<PointerMeshDraw*> _meshesDraw;
 	PointerMeshDraw *_currentMesh;
+
 	unsigned int _currentNV;
 	unsigned int _currentNF;
 	int _currentMeshType;

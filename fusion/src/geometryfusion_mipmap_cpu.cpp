@@ -18,6 +18,7 @@
 
 #include "fusion/inline_functions.hpp"
 
+#include <ctime>
 #include <stdlib.h>
 #include <xmmintrin.h> // SSE  intrinsics
 #include <emmintrin.h> // SSE2 intrinsics
@@ -41,6 +42,7 @@
 #include "fusion/loopclosure.hpp"
 
 #include <auxiliary/memory.hpp>
+#include <pcl/conversions.h>
 
 #include "fusion/meshcelltraversal.hpp"
 #include "fusion/meshcelltraversal_compact.hpp"
@@ -3144,7 +3146,7 @@ void FusionMipMapCPU::meshWrapperInterleaved(void)
 	std::lock_guard<std::mutex> updateLock(_pointCloudUpdate);
 	_currentPointCloud = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB> ());
 	_pclPointCloudInitialized = true;
-	for(size_t i=0;i<meshcellsSize;i++){
+	for(size_t i=0;i<meshcellsSize;i++) {
 //		fprintf(stderr," %li",i);
 		*_meshNext += *(_meshCellsCopy[i].meshinterleaved);
 		meshSize = _meshCellsCopy[i].meshinterleaved->vertices.size();
@@ -3159,6 +3161,7 @@ void FusionMipMapCPU::meshWrapperInterleaved(void)
 
 		}
 	}
+	updatePCLMesh();
 	} // End Mutex Scope
 	//updateLock.unlock();
 
@@ -3174,6 +3177,51 @@ void FusionMipMapCPU::meshWrapperInterleaved(void)
 	_meshingDone = 0;
 	}
 }
+
+void FusionMipMapCPU::updatePCLMesh() {
+	static uint32_t seq = 0;
+	if (!_meshCurrent) {
+		return;
+	}
+
+	if (!_currentPCLMesh.get()) {
+		_currentPCLMesh = pcl::PolygonMeshPtr(new pcl::PolygonMesh());
+	}
+
+	_currentPCLMesh->header.seq = seq++;
+	_currentPCLMesh->header.stamp = static_cast<uint64_t>(std::time(nullptr));
+	pcl::PointCloud<pcl::PointXYZRGBNormal> point_cloud;
+	pcl::PointXYZRGBNormal temp_point;
+	for (size_t i = 0, len = _meshCurrent->vertices.size(); i < len; i++) {
+		temp_point.x = _meshCurrent->vertices[i].x;
+		temp_point.y = _meshCurrent->vertices[i].y;
+		temp_point.z = _meshCurrent->vertices[i].z;
+		temp_point.r = _meshCurrent->colors[i].r;
+		temp_point.g = _meshCurrent->colors[i].g;
+		temp_point.b = _meshCurrent->colors[i].b;
+//		temp_point.normal_x = _meshCurrent->normals[i].x;
+//		temp_point.normal_y = _meshCurrent->normals[i].y;
+//		temp_point.normal_z = _meshCurrent->normals[i].z;
+		point_cloud.push_back(temp_point);
+	}
+
+	pcl::toPCLPointCloud2(point_cloud, _currentPCLMesh->cloud);
+	_currentPCLMesh->polygons.clear();
+
+	for (size_t i = 0, len = _meshCurrent->faces.size(); i < len; i += 3) {
+		pcl::Vertices face;
+		face.vertices.push_back(_meshCurrent->faces[i]);
+		face.vertices.push_back(_meshCurrent->faces[i + 1]);
+		face.vertices.push_back(_meshCurrent->faces[i + 2]);
+
+		_currentPCLMesh->polygons.push_back(face);
+	}
+}
+
+pcl::PolygonMeshPtr FusionMipMapCPU::getCurrentMesh() {
+	return _currentPCLMesh;
+}
+
 
 bool FusionMipMapCPU::updateMeshes()
 {

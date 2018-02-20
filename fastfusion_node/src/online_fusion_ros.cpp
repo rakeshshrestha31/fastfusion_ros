@@ -13,6 +13,7 @@
 //#define DEBUG_NO_MESHES
 //#define DEBUG_NO_MESH_VISUALIZATION
 #include "fastfusion_node/online_fusion_ros.hpp"
+#include <pcl/surface/vtk_smoothing/vtk_utils.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -330,6 +331,7 @@ void OnlineFusionROS::visualize() {
 	viewer->setShowFPS (false);
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 30);
 	viewer->addCoordinateSystem (1);
+	viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_SHADING,pcl::visualization::PCL_VISUALIZER_SHADING_PHONG,"poly_data");
 
 	//-- Prepare camera parameters
 	cv::Mat K_cv,Ext_cv, R_cv,t_cv;
@@ -357,31 +359,40 @@ void OnlineFusionROS::visualize() {
     		//-- Update Viewer
     		pcl::PointCloud<pcl::PointXYZRGB> points = _fusion->getCurrentPointCloud();
     		pcl::PointCloud<pcl::PointXYZRGB>::Ptr points_ptr (new pcl::PointCloud<pcl::PointXYZRGB>(points));
-    		if (points_ptr->points.size() > 0) {
-				//-- KdTree for NN-search
-				/*
-				std::clock_t begin = std::clock();
-				pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
-				kdtree.setInputCloud (points_ptr);
-				//-- Search nearest Point
-				pcl::PointXYZRGB searchPoint;
-				searchPoint.x = 1.0; searchPoint.y = 2.1; searchPoint.z = 0; searchPoint.r = 1; searchPoint.g = 0; searchPoint.b = 0;
-				std::vector<int> pointIdxNKNSearch(5);
-				std::vector<float> pointNKNSquaredDistance(5);
-				kdtree.nearestKSearch (searchPoint, 5, pointIdxNKNSearch, pointNKNSquaredDistance);
-				std::clock_t end = std::clock();
-				double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-				std::cout << "Time for kd-tree: " << elapsed_secs << std::endl;
-				*/
-				if (pointcloudInit) {
-					viewer->updatePointCloud(points_ptr,"visualization pc");
-				} else {
-					viewer->addPointCloud(points_ptr, "visualization pc");
-					pointcloudInit = true;
+				auto pcl_mesh_ptr = _fusion->getCurrentMesh();
+				if (pcl_mesh_ptr->polygons.size()) {
+	//			if (points_ptr->points.size() > 0) {
+					//-- KdTree for NN-search
+					/*
+					std::clock_t begin = std::clock();
+					pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
+					kdtree.setInputCloud (points_ptr);
+					//-- Search nearest Point
+					pcl::PointXYZRGB searchPoint;
+					searchPoint.x = 1.0; searchPoint.y = 2.1; searchPoint.z = 0; searchPoint.r = 1; searchPoint.g = 0; searchPoint.b = 0;
+					std::vector<int> pointIdxNKNSearch(5);
+					std::vector<float> pointNKNSquaredDistance(5);
+					kdtree.nearestKSearch (searchPoint, 5, pointIdxNKNSearch, pointNKNSquaredDistance);
+					std::clock_t end = std::clock();
+					double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+					std::cout << "Time for kd-tree: " << elapsed_secs << std::endl;
+					*/
+
+//					vtkSmartPointer<vtkPolyData> poly_data;
+//					pcl::VTKUtils::mesh2vtk(*pcl_mesh_ptr, poly_data);
+					if (pointcloudInit) {
+	//					viewer->updatePointCloud(points_ptr,"visualization pc");
+//						viewer->removePolygonMesh("visualization pc");
+						viewer->updatePolygonMesh(*pcl_mesh_ptr, "visualization pc");
+					} else {
+	//					viewer->addPointCloud(points_ptr, "visualization pc");
+						viewer->addPolygonMesh(*pcl_mesh_ptr, "visualization pc");
+//						viewer->*pcl_mesh_ptr(poly_data,"poly_data",0);
+						pointcloudInit = true;
+					}
 				}
-    		}
-            _update = false;
-        }
+				_update = false;
+			}
     }
     viewer->removePointCloud("visualization pc",0);
     viewer->close();

@@ -17,6 +17,7 @@
 #include "treeandbrick_incremental.hpp"
 #include <pcl/common/common_headers.h>
 #include <pcl/PCLPointCloud2.h>
+#include <pcl/PolygonMesh.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -143,6 +144,9 @@ public:
 
 	//-- Return current point cloud (vertices of the mesh)
 	pcl::PointCloud<pcl::PointXYZRGB> getCurrentPointCloud();
+  void updatePCLMesh();
+
+  pcl::PolygonMeshPtr getCurrentMesh();
 
 	//-- Meshing Methods
 	MeshSeparate getMeshSeparateMarchingCubes(MeshSeparate mesh = MeshSeparate(3));
@@ -485,6 +489,7 @@ protected:
 	MeshSeparate *_meshSeparateNext;
 	MeshInterleaved *_meshCurrent;
 	MeshInterleaved *_meshNext;
+	pcl::PolygonMeshPtr _currentPCLMesh;
 
 	CellUpdate *_updateCurrent;
 	CellUpdate *_updateNext;

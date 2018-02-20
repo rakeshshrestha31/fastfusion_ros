@@ -29,12 +29,12 @@
         <rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>
     </group>
     <!-- Run fastfusion_node-->
-    <node name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen">
-        <remap from="image_color"       to="$(arg camera_name)/rgb/image_color" />
-        <remap from="image_depth"       to="$(arg camera_name)/depth/image" />
+    <!--<node name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen">-->
+        <!--<remap from="image_color"       to="$(arg camera_name)/rgb/image_color" />-->
+        <!--<remap from="image_depth"       to="$(arg camera_name)/depth/image" />-->
 
-        <rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/>
-        <rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>
-    </node>
+        <!--<rosparam file="$(find fastfusion_node)/cfg/params_tum.yaml"/>-->
+        <!--<rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>-->
+    <!--</node>-->
     
 </launch>
