@@ -17,6 +17,8 @@
 
 #include <opencv2/opencv.hpp>
 
+using namespace fastfusion_node;
+
 OnlineFusionROS::OnlineFusionROS(bool createMeshList):
 	_currentMeshForSave(NULL),
 	_currentMeshInterleaved(NULL),
@@ -158,7 +160,10 @@ bool OnlineFusionROS::startNewMap() {
 	//-- Setup viewer if necessary
 	if (_use_pcl_visualizer) {
 		_visualizationThread = new std::thread(&OnlineFusionROS::visualize, this);
-	}
+	} else {
+    _pangolinViewer = boost::shared_ptr<PangolinViewer>(new PangolinViewer());
+    _visualizationThread = new std::thread(&PangolinViewer::run, _pangolinViewer.get());
+  }
 
 	//-- Setup new fusion object and configure it
 	_fusion = new FusionMipMapCPU(_offset.x,_offset.y,_offset.z,_scale, _distThreshold,0,true);
@@ -427,6 +432,9 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 		if (_frameCounter > 10) {
 			_update = true;
 		}
+		if (_pangolinViewer) {
+			_pangolinViewer->updateCameraPose(pose);
+		}
 		_isReady = true;
 		_fusionActive = false;
 	} else {
@@ -466,6 +474,9 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 			//-- Only update visualization after 10 frames fused
 			_update = true;
 		}
+		if (_pangolinViewer) {
+			_pangolinViewer->updateCameraPose(pose);
+		}
 	}
 }
 
@@ -497,6 +508,9 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, cv::Mat &
 		}
 		if (_frameCounter > 10) {
 			_update = true;
+		}
+		if (_pangolinViewer) {
+			_pangolinViewer->updateCameraPose(pose);
 		}
 		_isReady = true;
 		_fusionActive = false;
@@ -535,6 +549,9 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, cv::Mat &
 		if (_frameCounter > 10) {
 			//-- Only update visualization after fusing 10 frames
 			_update = true;
+		}
+		if (_pangolinViewer) {
+			_pangolinViewer->updateCameraPose(pose);
 		}
 	}
 }

@@ -29,7 +29,8 @@
         <rosparam file="$(find fastfusion_node)/cfg/camchain_tum2.yaml"/>
     </group>
     <!-- Run fastfusion_node-->
-    <!--<node name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen">-->
+    <!--<node name="fastfusion_node" pkg="fastfusion_node" type="fastfusion_node" clear_params="true" output="screen"-->
+          <!--launch-prefix="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libgpgme-pthread.so.11.11.0">-->
         <!--<remap from="image_color"       to="$(arg camera_name)/rgb/image_color" />-->
         <!--<remap from="image_depth"       to="$(arg camera_name)/depth/image" />-->
 

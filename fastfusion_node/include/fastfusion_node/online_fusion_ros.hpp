@@ -11,6 +11,8 @@
 #include <image_transport/image_transport.h>
 #include <camerautils/camerautils.hpp>
 #include <auxiliary/multivector.h>
+#include <fastfusion_node/pangolin_viewer.h>
+
 //#include <boost/thread/thread.hpp>
 //-- PCL includes
 #include <pcl/common/common_headers.h>
@@ -68,7 +70,6 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
 
 
 class OnlineFusionROS
@@ -146,6 +147,8 @@ protected :
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud);
 	void drawCameraFrustum(boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer, cv::Mat &R, cv::Mat &t);
+
+	boost::shared_ptr<fastfusion_node::PangolinViewer> _pangolinViewer;
 
 	void pointPickCallback(const pcl::visualization::PointPickingEvent& event, void*);
 	bool pointIsClicked, sphereIsInitialized;
