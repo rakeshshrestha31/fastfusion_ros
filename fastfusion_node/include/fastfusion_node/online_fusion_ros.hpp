@@ -11,6 +11,7 @@
 #include <image_transport/image_transport.h>
 #include <camerautils/camerautils.hpp>
 #include <auxiliary/multivector.h>
+
 #include <fastfusion_node/pangolin_viewer.h>
 
 //#include <boost/thread/thread.hpp>
@@ -18,8 +19,12 @@
 #include <pcl/common/common_headers.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
+
+#ifdef USE_PCL_VISUALIZATION
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_picking_event.h>
+#endif
+
 #include <pcl/PolygonMesh.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/Vertices.h>
@@ -137,20 +142,25 @@ public:
 
 protected :
 	bool _isSetup;
-	//-- Visualization Members
+#ifdef USE_PCL_VISUALIZATION
+  //-- Visualization Members
 	void visualize();
+#endif
 	std::thread * _visualizationThread;
 	bool _update;
 	bool _runVisualization;
 	bool _use_pcl_visualizer;
 	std::mutex _visualizationUpdateMutex;
+#ifdef USE_PCL_VISUALIZATION
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud);
 	void drawCameraFrustum(boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer, cv::Mat &R, cv::Mat &t);
-
+  void pointPickCallback(const pcl::visualization::PointPickingEvent& event, void*);
+#else
 	boost::shared_ptr<fastfusion_node::PangolinViewer> _pangolinViewer;
+#endif
 
-	void pointPickCallback(const pcl::visualization::PointPickingEvent& event, void*);
+
 	bool pointIsClicked, sphereIsInitialized;
 	std::vector<pcl::PointXYZ> clickedPoints;
 	unsigned int numberClickedPoints;

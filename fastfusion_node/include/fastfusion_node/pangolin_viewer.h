@@ -46,6 +46,11 @@ public:
   void updateMesh() { bUpdateMesh_ = true; }
 
   /**
+   * @brief terminate visualizer
+   */
+  void terminate() { bTerminate_ = true; }
+
+  /**
    *
    * @param cameraInfo info of the current camera (only pose is used)
    */
@@ -56,6 +61,7 @@ protected:
   std::mutex meshMutex_;
   std::mutex cameraPoseMutex_;
   std::atomic_bool bUpdateMesh_;
+  std::atomic_bool bTerminate_;
 
   Eigen::Matrix4f cameraPose_;
 

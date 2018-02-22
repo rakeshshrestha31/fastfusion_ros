@@ -13,7 +13,6 @@
 //#define DEBUG_NO_MESHES
 //#define DEBUG_NO_MESH_VISUALIZATION
 #include "fastfusion_node/online_fusion_ros.hpp"
-#include <pcl/surface/vtk_smoothing/vtk_utils.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -119,12 +118,17 @@ void OnlineFusionROS::stop() {
 	}
 
 	//-- End Visualization Thread
+#ifdef USE_PCL_VISUALIZATION
 	if (_use_pcl_visualizer){
 		//viewer->close();
 		_visualizationThread->join();
 		while (_update);
 		delete _visualizationThread;
 	}
+#else
+  _pangolinViewer->terminate();
+  _visualizationThread->join();
+#endif
 }
 
 bool OnlineFusionROS::startNewMap() {
@@ -158,12 +162,17 @@ bool OnlineFusionROS::startNewMap() {
 	}
 
 	//-- Setup viewer if necessary
+
+#ifdef USE_PCL_VISUALIZATION
 	if (_use_pcl_visualizer) {
-		_visualizationThread = new std::thread(&OnlineFusionROS::visualize, this);
-	} else {
+    _visualizationThread = new std::thread(&OnlineFusionROS::visualize, this);
+	}
+#else
+	if (_use_pcl_visualizer) {
     _pangolinViewer = boost::shared_ptr<PangolinViewer>(new PangolinViewer());
     _visualizationThread = new std::thread(&PangolinViewer::run, _pangolinViewer.get());
   }
+#endif
 
 	//-- Setup new fusion object and configure it
 	_fusion = new FusionMipMapCPU(_offset.x,_offset.y,_offset.z,_scale, _distThreshold,0,true);
@@ -266,6 +275,11 @@ void OnlineFusionROS::fusionWrapperROS(void) {
 				queueDecayTime.pop();
 				//updateLock.unlock();
 				//-- Add Map and perform update
+#ifndef USE_PCL_VISUALIZATION
+        if (_pangolinViewer) {
+					_pangolinViewer->updateCameraPose(currPose);
+				}
+#endif
 				_fusion->addMap(currImgDepth,currPose,currImgRGB,1.0f/_imageDepthScale,_maxCamDistance,currTime,currDecayTime);
 				_newMesh = _fusion->updateMeshes();
 			}
@@ -273,8 +287,9 @@ void OnlineFusionROS::fusionWrapperROS(void) {
 	}
 	_fusionActive = false;
 	
-}	
+}
 
+#ifdef USE_PCL_VISUALIZATION
 void OnlineFusionROS::drawCameraFrustum(boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer, cv::Mat &R_cv, cv::Mat &t_cv) {
 	Eigen::Vector3f tl1,tr1,br1,bl1,c1,t;
 	Eigen::Matrix3f R;
@@ -402,7 +417,7 @@ void OnlineFusionROS::visualize() {
     viewer->removePointCloud("visualization pc",0);
     viewer->close();
 }
-
+#endif
 
 void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInfo &pose, double time, double decayTime, ros::Time timestamp) {
 //-- Interface with fusion member which allows to query new depth data without noise information

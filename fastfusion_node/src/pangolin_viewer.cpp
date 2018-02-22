@@ -9,7 +9,7 @@
 
 namespace fastfusion_node {
 
-PangolinViewer::PangolinViewer() : bUpdateMesh_(false) {
+PangolinViewer::PangolinViewer() : bUpdateMesh_(false), bTerminate_(false) {
   imageWidth_ = 640;
   imageHeight_ = 480;
 
@@ -89,43 +89,60 @@ void PangolinViewer::updateCameraPose(CameraInfo &cameraInfo) {
 
 void PangolinViewer::run() {
   bUpdateMesh_ = false;
-  std::cout << "creating pangolin window..." << std::endl;
-  pangolin::CreateWindowAndBind("Mesh viewer", 960, 720);
-  std::cout << "created pangolin window" << std::endl;
-//  // 3D Mouse handler requires depth testing to be enabled
-//  glEnable(GL_DEPTH_TEST);
-//
-//  // Issue specific OpenGl we might need
-//  glEnable (GL_BLEND);
-//  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//
-//  pangolin::CreatePanel("menu").SetBounds(0.0,1.0,0.0,pangolin::Attach::Pix(175));
-//  pangolin::Var<bool> menuWireFrame("menu.Wireframe", true, true);
-//  pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
-//
-//  // Define Camera Render Object (for view / scene browsing)
-//  pangolin::OpenGlRenderState s_cam(
-//    pangolin::ProjectionMatrix(1024,768,viewpointF_,viewpointF_,480,360,0.1,1000),
-//    pangolin::ModelViewLookAt(viewpointX_,viewpointY_,viewpointZ_, 0,0,0,0.0,-1.0, 0.0)
-//  );
-//
-//  // Add named OpenGL viewport to window and provide 3D Handler
-//  pangolin::View& d_cam = pangolin::CreateDisplay()
-//    .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -960.0f/360.0f)
-//    .SetHandler(new pangolin::Handler3D(s_cam));
-//
-//  bool bFollow = true;
-//
-//  while (true) {
-//    if (bUpdateMesh_) {
-//      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//      drawCameraFrustum();
-//
-//      pangolin::FinishFrame();
-//      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//    }
-//  }
+  pangolin::CreateWindowAndBind("Mesh Viewer", 1024, 768);
+  // 3D Mouse handler requires depth testing to be enabled
+  glEnable(GL_DEPTH_TEST);
+
+  // Issue specific OpenGl we might need
+  glEnable (GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  pangolin::CreatePanel("menu").SetBounds(0.0,1.0,0.0,pangolin::Attach::Pix(175));
+  pangolin::Var<bool> menuWireFrame("menu.Wireframe", true, true);
+  pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
+
+  // Define Camera Render Object (for view / scene browsing)
+  pangolin::OpenGlRenderState s_cam(
+    pangolin::ProjectionMatrix(1024,768,viewpointF_,viewpointF_,512,389,0.1,1000),
+    pangolin::ModelViewLookAt(viewpointX_,viewpointY_,viewpointZ_, 0,0,0,0.0,-1.0, 0.0)
+  );
+
+  // Add named OpenGL viewport to window and provide 3D Handler
+  pangolin::View& d_cam = pangolin::CreateDisplay()
+    .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f/768.0f)
+    .SetHandler(new pangolin::Handler3D(s_cam));
+
+  bool bFollow = true;
+
+  // debug
+  bUpdateMesh_ = true;
+  while (!bTerminate_) {
+    if (bUpdateMesh_) {
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+      if(menuFollowCamera && bFollow)
+      {
+        s_cam.Follow(cameraPose_);
+      }
+      else if(menuFollowCamera && !bFollow)
+      {
+        s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX_,viewpointY_,viewpointZ_, 0,0,0,0.0,-1.0, 0.0));
+        s_cam.Follow(cameraPose_);
+        bFollow = true;
+      }
+      else if(!menuFollowCamera && bFollow)
+      {
+        bFollow = false;
+      }
+
+      d_cam.Activate(s_cam);
+      glClearColor(1.0f,1.0f,1.0f,1.0f);
+      drawCameraFrustum();
+
+      pangolin::FinishFrame();
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  }
 
 }
 
