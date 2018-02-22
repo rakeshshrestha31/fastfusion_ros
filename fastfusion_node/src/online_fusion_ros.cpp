@@ -275,13 +275,16 @@ void OnlineFusionROS::fusionWrapperROS(void) {
 				queueDecayTime.pop();
 				//updateLock.unlock();
 				//-- Add Map and perform update
+				_fusion->addMap(currImgDepth,currPose,currImgRGB,1.0f/_imageDepthScale,_maxCamDistance,currTime,currDecayTime);
+				_newMesh = _fusion->updateMeshes();
+
 #ifndef USE_PCL_VISUALIZATION
-        if (_pangolinViewer) {
+				if (_pangolinViewer) {
 					_pangolinViewer->updateCameraPose(currPose);
 				}
 #endif
-				_fusion->addMap(currImgDepth,currPose,currImgRGB,1.0f/_imageDepthScale,_maxCamDistance,currTime,currDecayTime);
-				_newMesh = _fusion->updateMeshes();
+
+
 			}
 		}
 	}
@@ -443,6 +446,11 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 		}
 		//-- Generate new Mesh
 		*_currentMeshInterleaved = _fusion->getMeshInterleavedMarchingCubes();
+#ifndef USE_PCL_VISUALIZER
+		if (_pangolinViewer) {
+			_pangolinViewer->setMesh(_currentMeshInterleaved);
+		}
+#endif
 		}
 		if (_frameCounter > 10) {
 			_update = true;
@@ -482,6 +490,11 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 			if(!_currentMeshForSave) _currentMeshForSave = new MeshSeparate(3);
 			if(!_currentMeshInterleaved) _currentMeshInterleaved = new MeshInterleaved(3);
 			*_currentMeshInterleaved = _fusion->getMeshInterleavedMarchingCubes();
+#ifndef USE_PCL_VISUALIZER
+			if (_pangolinViewer) {
+				_pangolinViewer->setMesh(_currentMeshInterleaved);
+			}
+#endif
 			} // visualization scope end
 		}
 		//-- Check whether to update Visualization

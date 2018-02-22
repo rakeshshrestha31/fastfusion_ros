@@ -5,14 +5,15 @@
 #ifndef FASTFUSION_META_ROS_PANGOLIN_VIEWER_H
 #define FASTFUSION_META_ROS_PANGOLIN_VIEWER_H
 
-#include <pcl/PolygonMesh.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Dense>
 
 #include <mutex>
 #include <atomic>
+#include <pangolin/pangolin.h>
 
 #include <camerautils/camerautils.hpp>
+#include <fusion/mesh.hpp>
 
 namespace fastfusion_node {
 
@@ -33,17 +34,12 @@ public:
    * @brief set mesh to visualize
    * @param mesh the mesh to visualize
    */
-  void setMesh(boost::shared_ptr<pcl::PolygonMesh> mesh);
+  void setMesh(MeshInterleaved *mesh);
 
   /**
    * @brief main function that visualizes the mesh
    */
   void run();
-
-  /**
-   * @brief sets the bUpdateMesh_ flag to true so that run() function updates the visualizer
-   */
-  void updateMesh() { bUpdateMesh_ = true; }
 
   /**
    * @brief terminate visualizer
@@ -57,11 +53,15 @@ public:
   void updateCameraPose(CameraInfo &cameraInfo);
 
 protected:
-  boost::shared_ptr<pcl::PolygonMesh> mesh_;
+  boost::shared_ptr<PointerMeshDraw> meshDrawPointer_;
+  MeshInterleaved *meshInterleaved_;
   std::mutex meshMutex_;
   std::mutex cameraPoseMutex_;
   std::atomic_bool bUpdateMesh_;
   std::atomic_bool bTerminate_;
+  bool bLightingEnabled_;
+  bool bColorEnabled_;
+  int bDisplayMode_;
 
   Eigen::Matrix4f cameraPose_;
 
@@ -70,7 +70,27 @@ protected:
   float cameraSize_;
   float cameraLineWidth_;
 
+  GLuint vertexBuffer_;
+  GLuint faceBuffer_;
+  GLuint edgeBuffer_;
+  GLuint normalBuffer_;
+  GLuint colorBuffer_;
+  unsigned int vertexBufferSize_;
+  unsigned int faceBufferSize_;
+  unsigned int edgeBufferSize_;
+
+  unsigned int currentNV_;
+  unsigned int currentNF_;
+
+  void generateBuffers();
+  bool buffersGenerated_;
+
+  // drawing helpers
   void drawCameraFrustum();
+  void drawOriginFrame();
+  void drawMesh();
+  void drawMeshPointer();
+  void drawMeshInterleaved();
 };
 
 } // namespace fastfusion_node
