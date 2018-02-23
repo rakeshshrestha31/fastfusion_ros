@@ -138,6 +138,11 @@ void PangolinViewer::drawMeshPointer() {
   }
   if(bColorEnabled_) glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
+
+  if (bDisplayMode_ == 1) {
+    glPolygonMode(GL_FRONT, GL_FILL);
+    glPolygonMode(GL_BACK, GL_FILL);
+  }
 }
 
 void PangolinViewer::drawMeshInterleaved() {
@@ -300,7 +305,8 @@ void PangolinViewer::run() {
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   pangolin::CreatePanel("menu").SetBounds(0.0,1.0,0.0,pangolin::Attach::Pix(175));
-  pangolin::Var<bool> menuWireFrame("menu.Wireframe", true, true);
+//  pangolin::Var<bool> menuWireFrame("menu.Wireframe", true, true);
+  pangolin::Var<int> menuDisplayMode("menu.Display Mode",1,1,3, false);
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
 //  pangolin::Var<bool> menuLighting("menu.Lighting", true, true);
   pangolin::Var<bool> menuColor("menu.Color", true, true);
@@ -350,11 +356,7 @@ void PangolinViewer::run() {
       bColorEnabled_ = false;
     }
 
-    if (menuWireFrame && bDisplayMode_!=1) {
-      bDisplayMode_ = 1;
-    } else if (!menuWireFrame && bDisplayMode_ == 1) {
-      bDisplayMode_ = 0;
-    }
+    bDisplayMode_ = menuDisplayMode;
 
     d_cam.Activate(s_cam);
     glClearColor(1.0f,1.0f,1.0f,1.0f);
