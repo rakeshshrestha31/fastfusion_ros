@@ -39,4 +39,4 @@ use_pointcloud_input: false
 depth_noise: false
 
 # Want to use pcl visualizer (e.g. when performing global reconstruction)
-use_pcl_visualizer : true
+use_pcl_visualizer : false # true

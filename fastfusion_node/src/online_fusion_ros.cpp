@@ -126,8 +126,10 @@ void OnlineFusionROS::stop() {
 		delete _visualizationThread;
 	}
 #else
-  _pangolinViewer->terminate();
-  _visualizationThread->join();
+	if (_use_pcl_visualizer) {
+		_pangolinViewer->terminate();
+		_visualizationThread->join();
+	}
 #endif
 }
 
@@ -284,7 +286,14 @@ void OnlineFusionROS::fusionWrapperROS(void) {
 				}
 #endif
 
-
+#ifndef USE_PCL_VISUALIZER
+				if (_update) {
+					_update = false;
+					if (_pangolinViewer) {
+						_pangolinViewer->setMesh(_currentMeshInterleaved);
+					}
+				}
+#endif
 			}
 		}
 	}
@@ -446,18 +455,11 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 		}
 		//-- Generate new Mesh
 		*_currentMeshInterleaved = _fusion->getMeshInterleavedMarchingCubes();
-#ifndef USE_PCL_VISUALIZER
-		if (_pangolinViewer) {
-			_pangolinViewer->setMesh(_currentMeshInterleaved);
-		}
-#endif
 		}
 		if (_frameCounter > 10) {
 			_update = true;
 		}
-		if (_pangolinViewer) {
-			_pangolinViewer->updateCameraPose(pose);
-		}
+
 		_isReady = true;
 		_fusionActive = false;
 	} else {
@@ -490,20 +492,12 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, CameraInf
 			if(!_currentMeshForSave) _currentMeshForSave = new MeshSeparate(3);
 			if(!_currentMeshInterleaved) _currentMeshInterleaved = new MeshInterleaved(3);
 			*_currentMeshInterleaved = _fusion->getMeshInterleavedMarchingCubes();
-#ifndef USE_PCL_VISUALIZER
-			if (_pangolinViewer) {
-				_pangolinViewer->setMesh(_currentMeshInterleaved);
-			}
-#endif
 			} // visualization scope end
 		}
 		//-- Check whether to update Visualization
 		if (_frameCounter > 10) {
 			//-- Only update visualization after 10 frames fused
 			_update = true;
-		}
-		if (_pangolinViewer) {
-			_pangolinViewer->updateCameraPose(pose);
 		}
 	}
 }
@@ -536,9 +530,7 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, cv::Mat &
 		}
 		if (_frameCounter > 10) {
 			_update = true;
-		}
-		if (_pangolinViewer) {
-			_pangolinViewer->updateCameraPose(pose);
+
 		}
 		_isReady = true;
 		_fusionActive = false;
@@ -577,9 +569,6 @@ void OnlineFusionROS::updateFusion(cv::Mat &rgbImg, cv::Mat &depthImg, cv::Mat &
 		if (_frameCounter > 10) {
 			//-- Only update visualization after fusing 10 frames
 			_update = true;
-		}
-		if (_pangolinViewer) {
-			_pangolinViewer->updateCameraPose(pose);
 		}
 	}
 }
