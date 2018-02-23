@@ -41,11 +41,11 @@ void PangolinViewer::drawMesh() {
 }
 
 void PangolinViewer::generateBuffers() {
-  glewInit();
-  glGenBuffers(1, &vertexBuffer_);
-  glGenBuffers(1, &faceBuffer_);
-  glGenBuffers(1, &colorBuffer_);
-  glGenBuffers(1, &normalBuffer_);
+//  glewInit();
+//  glGenBuffers(1, &vertexBuffer_);
+//  glGenBuffers(1, &faceBuffer_);
+//  glGenBuffers(1, &colorBuffer_);
+//  glGenBuffers(1, &normalBuffer_);
   buffersGenerated_ = true;
 }
 
@@ -56,42 +56,46 @@ void PangolinViewer::drawMeshPointer() {
   if (!meshDrawPointer_ || !meshDrawPointer_->nf) {
     return;
   }
-  if (!buffersGenerated_){
-    generateBuffers();
-  }
+//  if (!buffersGenerated_){
+//    generateBuffers();
+//  }
 
   if (meshDrawPointer_->nv != currentNV_ || meshDrawPointer_->nf != currentNF_) {
     currentNF_ = meshDrawPointer_->nf;
     currentNV_ = meshDrawPointer_->nv;
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_);
-    glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nv * 3 * sizeof(float), meshDrawPointer_->v, GL_STATIC_DRAW);
-    if (meshDrawPointer_->colored) {
-      glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_);
-      glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nv * 3, meshDrawPointer_->c, GL_STATIC_DRAW);
-    }
-    if (meshDrawPointer_->type == 1) {
-      glBindBuffer(GL_ARRAY_BUFFER, normalBuffer_);
-      glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nn * 3 * sizeof(float), meshDrawPointer_->n, GL_STATIC_DRAW);
-    }
-    if (meshDrawPointer_->type != 1 && meshDrawPointer_->nf) {
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, faceBuffer_);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshDrawPointer_->nf * sizeof(unsigned int),
-                   meshDrawPointer_->f, GL_STATIC_DRAW);
-    }
+//    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_);
+//    glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nv * 3 * sizeof(float), meshDrawPointer_->v, GL_STATIC_DRAW);
+//    if (meshDrawPointer_->colored) {
+//      glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_);
+//      glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nv * 3, meshDrawPointer_->c, GL_STATIC_DRAW);
+//    }
+//    if (meshDrawPointer_->type == 1) {
+//      glBindBuffer(GL_ARRAY_BUFFER, normalBuffer_);
+//      glBufferData(GL_ARRAY_BUFFER, meshDrawPointer_->nn * 3 * sizeof(float), meshDrawPointer_->n, GL_STATIC_DRAW);
+//    }
+//    if (meshDrawPointer_->type != 1 && meshDrawPointer_->nf) {
+//      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, faceBuffer_);
+//      glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshDrawPointer_->nf * sizeof(unsigned int),
+//                   meshDrawPointer_->f, GL_STATIC_DRAW);
+//    }
   }
-  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
-  glVertexPointer(3, GL_FLOAT, 0, 0);
+//  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
+//  glVertexPointer(3, GL_FLOAT, 0, 0);
+  glVertexPointer(3, GL_FLOAT, 0, meshDrawPointer_->v);
+
   if(meshDrawPointer_->colored){
-    glBindBuffer(GL_ARRAY_BUFFER,colorBuffer_);
-    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER,colorBuffer_);
+//    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
+    glColorPointer(3, GL_UNSIGNED_BYTE, 0, meshDrawPointer_->c);
   }
   else{
     glColor3f(0.5f,0.5f,0.5f);
   }
   if(meshDrawPointer_->type==1 && meshDrawPointer_->nn>0){
-    glBindBuffer(GL_ARRAY_BUFFER,normalBuffer_);
-    glNormalPointer(GL_FLOAT, 0,0);
+//    glBindBuffer(GL_ARRAY_BUFFER,normalBuffer_);
+//    glNormalPointer(GL_FLOAT, 0,0);
+    glNormalPointer(GL_FLOAT, 0, meshDrawPointer_->n);
   }
 
   glEnableClientState(GL_VERTEX_ARRAY);
@@ -133,7 +137,7 @@ void PangolinViewer::drawMeshPointer() {
     }
     else{
       fprintf(stderr,"\nDrawing Triangles");
-      glDrawElements(GL_TRIANGLES, meshDrawPointer_->nf, GL_UNSIGNED_INT,0);
+      glDrawElements(GL_TRIANGLES, meshDrawPointer_->nf, GL_UNSIGNED_INT,meshDrawPointer_->f);
     }
   }
   if(bColorEnabled_) glDisableClientState(GL_COLOR_ARRAY);
@@ -155,24 +159,27 @@ void PangolinViewer::drawMeshInterleaved() {
     currentNF_ = meshInterleaved_->faces.size();
     currentNV_ = meshInterleaved_->vertices.size();
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_);
-    glBufferData(GL_ARRAY_BUFFER, meshInterleaved_->vertices.size() * 3 * sizeof(float), meshInterleaved_->vertices.data(), GL_STATIC_DRAW);
-    if (meshInterleaved_->colors.size()) {
-      glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_);
-      glBufferData(GL_ARRAY_BUFFER, meshInterleaved_->vertices.size() * 3, meshInterleaved_->colors.data(), GL_STATIC_DRAW);
-    }
-
-    if (meshInterleaved_->faces.size()) {
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, faceBuffer_);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshInterleaved_->faces.size() * sizeof(unsigned int),
-                   meshInterleaved_->faces.data(), GL_STATIC_DRAW);
-    }
+//    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_);
+//    glBufferData(GL_ARRAY_BUFFER, meshInterleaved_->vertices.size() * 3 * sizeof(float), meshInterleaved_->vertices.data(), GL_STATIC_DRAW);
+//    if (meshInterleaved_->colors.size()) {
+//      glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_);
+//      glBufferData(GL_ARRAY_BUFFER, meshInterleaved_->vertices.size() * 3, meshInterleaved_->colors.data(), GL_STATIC_DRAW);
+//    }
+//
+//    if (meshInterleaved_->faces.size()) {
+//      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, faceBuffer_);
+//      glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshInterleaved_->faces.size() * sizeof(unsigned int),
+//                   meshInterleaved_->faces.data(), GL_STATIC_DRAW);
+//    }
   }
-  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
-  glVertexPointer(3, GL_FLOAT, 0, 0);
+//  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
+//  glVertexPointer(3, GL_FLOAT, 0, 0);
+  glVertexPointer(3, GL_FLOAT, 0, meshInterleaved_->vertices.data());
+
   if(meshInterleaved_->colors.size()) {
-    glBindBuffer(GL_ARRAY_BUFFER,colorBuffer_);
-    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER,colorBuffer_);
+//    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
+    glColorPointer(3, GL_UNSIGNED_BYTE, 0, meshInterleaved_->colors.data());
   }
   else {
     glColor3f(0.5f,0.5f,0.5f);
@@ -198,11 +205,11 @@ void PangolinViewer::drawMeshInterleaved() {
 
   if (bDisplayMode_==2){
     glPointSize(2.0);
-    glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
+//    glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer_);
     glDrawArrays(GL_POINTS,0,meshInterleaved_->vertices.size());
   }
   else{
-    glDrawElements(GL_TRIANGLES, meshInterleaved_->faces.size(), GL_UNSIGNED_INT,0);
+    glDrawElements(GL_TRIANGLES, meshInterleaved_->faces.size(), GL_UNSIGNED_INT,meshInterleaved_->faces.data());
   }
   if(bColorEnabled_) glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
@@ -299,7 +306,7 @@ void PangolinViewer::run() {
   pangolin::CreatePanel("menu").SetBounds(0.0,1.0,0.0,pangolin::Attach::Pix(175));
   pangolin::Var<bool> menuWireFrame("menu.Wireframe", true, true);
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
-  pangolin::Var<bool> menuLighting("menu.Lighting", true, true);
+//  pangolin::Var<bool> menuLighting("menu.Lighting", true, true);
   pangolin::Var<bool> menuColor("menu.Color", true, true);
 
   // Define Camera Render Object (for view / scene browsing)
@@ -335,16 +342,22 @@ void PangolinViewer::run() {
       bFollow = false;
     }
 
-    if (menuLighting && !bLightingEnabled_) {
-      bLightingEnabled_ = true;
-    } else if (!menuLighting && bLightingEnabled_) {
-      bLightingEnabled_ = false;
-    }
+//    if (menuLighting && !bLightingEnabled_) {
+//      bLightingEnabled_ = true;
+//    } else if (!menuLighting && bLightingEnabled_) {
+//      bLightingEnabled_ = false;
+//    }
 
     if (menuColor && !bColorEnabled_) {
       bColorEnabled_ = true;
     } else if (!menuColor && bColorEnabled_) {
       bColorEnabled_ = false;
+    }
+
+    if (menuWireFrame && bDisplayMode_!=1) {
+      bDisplayMode_ = 1;
+    } else if (!menuWireFrame && bDisplayMode_ == 1) {
+      bDisplayMode_ = 0;
     }
 
     d_cam.Activate(s_cam);
