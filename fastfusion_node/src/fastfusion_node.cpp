@@ -6,6 +6,7 @@
  */
 
 #include "fastfusion_node/fastfusion_node.hpp"
+#include <chrono>
 
 FastFusionWrapper::FastFusionWrapper():  nodeLocal_("~") {
 //Constructor FastFusionWrapper
@@ -548,6 +549,14 @@ void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB,
 //-- Callback function to receive depth image with corresponding RGB frame as ROS-Messages
 //-- Convert the messages to cv::Mat and wait for tf-transform corresponding to the frames
 //-- Push the data into the fastfusion pipeline for processing. This callback is unused.
+
+	// take only the nth frames
+	static uint frame_count = 0;
+	frame_count++;
+	if (frame_count % 5 != 0) {
+		return;
+	}
+
 	if (((msgRGB->header.stamp - previous_ts_).toSec() <= 0.05) && runMapping_){
 		return;
 	}
@@ -585,9 +594,25 @@ void FastFusionWrapper::imageCallback(const sensor_msgs::ImageConstPtr& msgRGB,
 	CameraInfo incomingFramePose;
 	incomingFramePose = convertTFtoCameraInfo(transform);
 
+	static std::vector<double> fusion_times;
+
 	//-- Fuse the imcoming Images into existing map
-	if (runMapping_){
+	if (runMapping_) {
+		auto start = std::chrono::high_resolution_clock::now();
 		onlinefusion_.updateFusion(imgRGB, imgDepth, incomingFramePose,time, decayTime_,timestamp);
+		auto finish = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed = finish - start;
+		fusion_times.push_back(elapsed.count());
+
+		ROS_INFO_THROTTLE(
+			1, "AVG FUSION TIME: %f",
+			std::accumulate(
+				fusion_times.begin(), fusion_times.end(), (double)0.0,
+				[](double x, double total) {
+					return x + total;
+				}
+			) / fusion_times.size()
+		);
 	}
 }
 

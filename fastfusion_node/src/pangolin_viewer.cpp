@@ -122,21 +122,17 @@ void PangolinViewer::drawMeshPointer() {
 
   if(meshDrawPointer_->type==1){
     if(bDisplayMode_==2){
-      fprintf(stderr,"\nDrawing Points");
       glDrawArrays(GL_POINTS, 0,meshDrawPointer_->nv);
     }
     else{
-      fprintf(stderr,"\nDrawing Triangles");
       glDrawArrays(GL_TRIANGLES, 0,meshDrawPointer_->nv);
     }
   }
   else{
     if(bDisplayMode_==2){
-      fprintf(stderr,"\nDrawing Points");
       glDrawArrays(GL_POINTS, 0,meshDrawPointer_->nv);
     }
     else{
-      fprintf(stderr,"\nDrawing Triangles");
       glDrawElements(GL_TRIANGLES, meshDrawPointer_->nf, GL_UNSIGNED_INT,meshDrawPointer_->f);
     }
   }
