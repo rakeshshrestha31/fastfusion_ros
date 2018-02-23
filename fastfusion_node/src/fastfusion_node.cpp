@@ -7,6 +7,7 @@
 
 #include "fastfusion_node/fastfusion_node.hpp"
 #include <chrono>
+#include <numeric>
 
 FastFusionWrapper::FastFusionWrapper():  nodeLocal_("~") {
 //Constructor FastFusionWrapper

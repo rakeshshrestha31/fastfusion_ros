@@ -331,10 +331,12 @@ void PangolinViewer::run() {
 
     if(menuFollowCamera && bFollow)
     {
+      std::unique_lock<std::mutex> lock(cameraPoseMutex_);
       s_cam.Follow(cameraPose_);
     }
     else if(menuFollowCamera && !bFollow)
     {
+      std::unique_lock<std::mutex> lock(cameraPoseMutex_);
       s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX_,viewpointY_,viewpointZ_, 0,0,0,0.0,-1.0, 0.0));
       s_cam.Follow(cameraPose_);
       bFollow = true;
